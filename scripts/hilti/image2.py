@@ -369,7 +369,7 @@ class Image:
         
         for seg in self.segments:
             # 3. segment processing
-            self.process_segments(seg, verbose=False)
+            self.process_segments(seg, verbose=True)
             # # 4. outliers top
             # self.filter_outliers_top(seg, y_range=25, threshold=4,
             #                          verbose=False)
