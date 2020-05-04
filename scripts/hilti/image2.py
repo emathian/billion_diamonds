@@ -20,7 +20,6 @@ class Image:
         self.rgb_img = None
         self.gray_img = None
         self.segments = []
-        self.inner_segments = []
         self.orig_height = 3000
         self.orig_width = 4096
         # self.mean_pixels, self.std_pixels = cv.meanStdDev(self.gray_img)
@@ -121,7 +120,7 @@ class Image:
         else:
             # for polygons x,y coordinates for
             # top left, bottom left, bottom right, top right (in this order)
-            pts_list_outer = [
+            pts_list = [
                 # segment 1
                 np.array(([550, 541], [550, 811], [1423, 811], [1423, 541]),
                          dtype=np.int32),
@@ -167,74 +166,20 @@ class Image:
                                                                      1908]),
                          dtype=np.int32)
             ]
-
-            pts_list_inner = [
-                # segment 1
-                np.array(([561, 562], [524, 809], [1398, 796], [1410, 550]),
-                         dtype=np.int32),
-                # segment 2
-                np.array(([1588, 546], [1577, 789], [2459, 780], [2443, 526]),
-                         dtype=np.int32),
-                # segments 3
-                np.array(([2626, 535], [2638, 780], [3515, 769], [3483, 526]),
-                         dtype=np.int32),
-                # segments 4
-                np.array(([505, 989], [467, 1253], [1374, 1241], [1390, 975]),
-                         dtype=np.int32),
-                # segments 5
-                np.array(([1573, 980], [1561, 1240], [2479, 1228], [2468,
-                                                                    960]),
-                         dtype=np.int32),
-                # segments 6
-                np.array(([2651, 961], [2663, 1229], [3580, 1219], [3533,
-                                                                    950]),
-                         dtype=np.int32),
-                # segments 7
-                np.array(([442, 1449], [400, 1737], [1349, 1728], [1362,
-                                                                   1436]),
-                         dtype=np.int32),
-                # segments 8
-                np.array(([1558, 1437], [1537, 1726], [2499, 1716], [2488,
-                                                                     1424]),
-                         dtype=np.int32),
-                # segments 9
-                np.array(([2672, 1447], [2686, 1716], [3637, 1704], [3599,
-                                                                     1410]),
-                         dtype=np.int32),
-                # segments 10
-                np.array(([370, 1944], [330, 2257], [1316, 2256], [1322,
-                                                                   1938]),
-                         dtype=np.int32),
-                # segments 11
-                np.array(([1526, 1936], [1513, 2253], [2512, 2244], [2501,
-                                                                     1925]),
-                         dtype=np.int32),
-                # segments 12
-                np.array(([2696, 1923], [2714, 2243], [3703, 2225], [3668,
-                                                                     1909]),
-                         dtype=np.int32)
-            ]
+            
 
 
         # set segments
-        if not self.use_polygons:
-            for i, pts in enumerate(pts_list):
+        for i, pts in enumerate(pts_list):
+            if not self.use_polygons:
                 self.segments.append(Segment(pts[0], pts[1], pts[2] - pts[0],
                                              pts[3] - pts[1]))
-                self.segments[-1].set_id(i + 1)
-
-        else:
-            for i, pts in enumerate(pts_list_outer):
+            else:
                 x, y, w, h = cv.boundingRect(pts)
                 self.segments.append(Segment(x, y, w, h))
                 self.segments[-1].set_pts(pts)
-                self.segments[-1].set_id(i + 1)
 
-            for i, pts in enumerate(pts_list_inner):
-                x, y, w, h = cv.boundingRect(pts)
-                self.inner_segments.append(Segment(x, y, w, h))
-                self.inner_segments[-1].set_pts(pts)
-                self.inner_segments[-1].set_id(i + 1)
+            self.segments[-1].set_id(i + 1)
 
 
 
@@ -258,45 +203,35 @@ class Image:
         self.gray_seg = self.gray_img[seg.y:seg.y + seg.h,
                                       seg.x:seg.x + seg.w]
 
-     
-        if self.use_polygons:
-            self.inner_gray_seg = self.gray_img[inner_seg.y:inner_seg.y + inner_seg.h,
-                                      inner_seg.x:inner_seg.x + inner_seg.w]
-
 
         if self.use_polygons:
             # remove reflections
-            min_val_pixel = np.min(self.inner_gray_seg)
+            min_val_pixel = np.min(self.gray_seg)
             # self.gray_seg[self.gray_seg == 255] = min_val_pixel
             if min_val_pixel > 0:
-                self.inner_gray_seg[self.inner_gray_seg >= 250] = min_val_pixel
+                self.gray_seg[self.gray_seg >= 250] = min_val_pixel
             else:
-                self.inner_gray_seg[self.inner_gray_seg >= 250] = 1
+                self.gray_seg[self.gray_seg >= 250] = 1
 
 
-            show_img("00 inner_gray_seg remove white pixel", self.inner_gray_seg, 1)
+            show_img("00 gray_seg remove white pixel", self.gray_seg, 1)
             # inner_seg.pts -= inner_seg.pts.min(axis=0)
-            # mask = np.zeros(self.inner_gray_seg.shape[:2], dtype=np.uint8)
+            # mask = np.zeros(self.gray_seg.shape[:2], dtype=np.uint8)
             # show_img("mask", mask, 1)
             # cv.drawContours(mask, [inner_seg.pts], -1, (255, 255, 255), -1,
             #                 cv.LINE_AA)
-            # self.inner_gray_seg[self.inner_gray_seg >= 250] = 1
-            # self.inner_gray_seg = cv.bitwise_and(self.inner_gray_seg, self.inner_gray_seg,
+            # self.gray_seg[self.gray_seg >= 250] = 1
+            # self.gray_seg = cv.bitwise_and(self.gray_seg, self.gray_seg,
             #                                mask=mask)
-            # show_img("0 gray_seg", self.inner_gray_seg, 1)
+            # show_img("0 gray_seg", self.gray_seg, 1)
             # # self.gray_seg[self.gray_seg == 0] = 255
 
-            # bg = np.ones_like(self.inner_gray_seg, dtype=np.uint8) * 255
+            # bg = np.ones_like(self.gray_seg, dtype=np.uint8) * 255
             # cv.bitwise_not(bg, bg, mask=mask)
-            # self.inner_gray_seg = cv.bitwise_xor(self.inner_gray_seg, bg)
-            # show_img("1 gray_seg", self.inner_gray_seg, 1)
+            # self.gray_seg = cv.bitwise_xor(self.gray_seg, bg)
+            # show_img("1 gray_seg", self.gray_seg, 1)
 
             # show_img("bg", bg, 1)
-
-            self.gray_img[inner_seg.y:inner_seg.y + inner_seg.h,
-                                      inner_seg.x:inner_seg.x + inner_seg.w] = self.inner_gray_seg
-            self.gray_seg = self.gray_img[seg.y:seg.y + seg.h,
-                                      seg.x:seg.x + seg.w]
             show_img("1 OUTER gray_seg", self.gray_seg, 1)
             # self.gray_seg += bg
 
@@ -431,26 +366,10 @@ class Image:
 
         self.set_segs_fixed_bounding_boxes(use_polygons=True, verbose=True)
 
-        #for seg in self.segments:
-        if not self.use_polygons:
-            for seg in self.segments:
-                # 3. segment processing
-                self.process_segments(seg, inner_seg=None, verbose=False)
-                # # 4. outliers top
-                # self.filter_outliers_top(seg, y_range=25, threshold=4,
-                #                          verbose=False)
-                # # 5. outliers left right
-                # self.filter_outliers_left_right(seg, x_range=30, threshold=1,
-                #                                 verbose=False)
-
-        else :    
-            for i in range(len(self.segments)):
-                seg = self.segments[i]
-                inner_seg = self.inner_segments[i]
-
-                # 3. segment processing
-                print("\n \n seg ", seg)
-                self.process_segments(seg, inner_seg=inner_seg, verbose=False)
+        
+        for seg in self.segments:
+            # 3. segment processing
+            self.process_segments(seg, verbose=False)
             # # 4. outliers top
             # self.filter_outliers_top(seg, y_range=25, threshold=4,
             #                          verbose=False)
