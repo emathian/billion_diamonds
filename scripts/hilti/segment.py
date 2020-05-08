@@ -22,6 +22,9 @@ class Segment:
         self.diamonds = []
         self.accuracy = 0.  # template matching accuracy
         self.pts = None
+        self.left_border = 0
+        self.right_border = 0
+        self.bottom_border = 0
 
     def set_id(self, curr_id):
         """Set ID method
@@ -39,6 +42,15 @@ class Segment:
         """
         return len(self.diamonds)
 
+    def adjust_right_border(self, margin_r):
+        self.right_border = margin_r
+
+    def adjust_left_border(self, margin_l):
+        self.left_border = margin_l
+
+    def adjust_bottom_border(self, margin_b):
+        self.bottom_border = margin_b
+        
     def set_template_matching_accuracy(self, accuracy):
         """Set template matching accuracy
         Sets the template matching accuracy the segment was found with
